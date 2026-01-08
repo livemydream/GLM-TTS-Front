@@ -1,49 +1,47 @@
-import React, { memo } from 'react';
-import Markdown from 'markdown-to-jsx';
+import React, { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import './MarkdownRenderer.css';
 
 /**
- * Markdown 渲染组件（使用 memo 优化，避免不必要的重新渲染）
+ * Markdown 渲染组件
  */
-const markdownOptions = {
-  overrides: {
-    h1: { component: 'h1' },
-    h2: { component: 'h2' },
-    h3: { component: 'h3' },
-    h4: { component: 'h4' },
-    h5: { component: 'h5' },
-    h6: { component: 'h6' },
-    p: { component: 'p' },
-    strong: { component: 'strong' },
-    em: { component: 'em' },
-    code: { component: 'code' },
-    pre: { component: 'pre' },
-    ul: { component: 'ul' },
-    ol: { component: 'ol' },
-    li: { component: 'li' },
-    a: { component: 'a' },
-    blockquote: { component: 'blockquote' },
-    hr: { component: 'hr' },
-    img: { component: 'img' },
-  },
-};
 
-const MarkdownRenderer = memo(({ content }) => {
+const MarkdownRenderer = ({ content }) => {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    // 延迟渲染，确保 DOM 完全更新
+    const timer = setTimeout(() => {
+      setReady(true);
+    }, 50);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  console.log('[MarkdownRenderer render]', {
+    contentLength: content?.length,
+    ready,
+    hasMarkdown: content?.includes('**'),
+  });
+
   if (!content) {
     return <div className="markdown-content">...</div>;
   }
 
+  // 未准备好时显示纯文本
+  if (!ready) {
+    return <div className="markdown-content">{content}</div>;
+  }
+
   return (
     <div className="markdown-content">
-      <Markdown options={markdownOptions}>
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>
         {content}
-      </Markdown>
+      </ReactMarkdown>
     </div>
   );
-}, (prevProps, nextProps) => {
-  // 只在 content 变化时重新渲染
-  return prevProps.content === nextProps.content;
-});
+};
 
 MarkdownRenderer.displayName = 'MarkdownRenderer';
 

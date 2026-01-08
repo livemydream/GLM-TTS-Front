@@ -81,8 +81,11 @@ export const ChatActionCreators = {
         },
         // onComplete - 流结束
         () => {
+          // 添加一个随机数确保对象引用改变，触发更新
           ChatActions.updateMessage(tempMessageId, {
+            content: fullContent,
             isStreaming: false,
+            _version: Date.now(), // 内部版本号
           });
           if (sessionId) {
             ChatActions.setSessionId(sessionId);
@@ -107,15 +110,21 @@ export const ChatActionCreators = {
       try {
         const response = await glmApi.getHistory(sessionId);
 
-        if (response && response.data) {
-          const historyMessages = response.data.history.map((content, index) => ({
+        // 检查响应状态码
+        if (response && response.code === 0 && response.data) {
+          const historyMessages = response.data.history.map((item, index) => ({
             id: Date.now() + index,
-            content,
-            role: index % 2 === 0 ? 'user' : 'assistant',
+            content: item.message,
+            role: item.role,
           }));
 
           ChatActions.loadHistory(historyMessages);
-          ChatActions.setSessionId(sessionId);
+          // 使用返回的 sessionId
+          if (response.data.sessionId) {
+            ChatActions.setSessionId(response.data.sessionId);
+          }
+        } else {
+          ChatActions.setError(response?.msg || '加载历史失败');
         }
       } catch (error) {
         ChatActions.setError(error.message || '加载历史失败');

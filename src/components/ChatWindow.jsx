@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, memo, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Input, Button, Avatar, Tag, message as antMessage, Tooltip, Switch, Space } from 'antd';
 import { SendOutlined, UserOutlined, RobotOutlined, ClearOutlined, DeleteOutlined, ThunderboltOutlined, PlusOutlined } from '@ant-design/icons';
 import ChatStore from '@/flux/ChatStore';
@@ -9,31 +9,47 @@ import './ChatWindow.css';
 
 const { TextArea } = Input;
 
-// 使用 memo 优化的消息项组件
-const MessageItem = memo(({ msg, onDelete, formatTime }) => {
-  const content = useMemo(() => {
-    if (msg.role === 'assistant') {
-      if (msg.isStreaming) {
-        return <div className="message-text streaming-text">{msg.content || '...'}</div>;
-      }
-      return <MarkdownRenderer content={msg.content || '...'} />;
-    }
-    return <div className="message-text">{msg.content || '...'}</div>;
-  }, [msg.role, msg.isStreaming, msg.content]);
+// 消息项组件
+const MessageItem = ({ msg, onDelete, formatTime }) => {
+  console.log('[MessageItem render]', {
+    id: msg.id,
+    role: msg.role,
+    isStreaming: msg.isStreaming,
+    contentLength: msg.content?.length,
+    _version: msg._version,
+  });
+
+  const isAssistant = msg.role === 'assistant';
+  const isStreaming = msg.isStreaming === true;
+
+  // 流式阶段使用 streaming key，完成后使用 final key，强制重新创建组件
+  const markdownKey = isStreaming
+    ? `streaming-${msg.id}`
+    : `final-${msg.id}-${msg._version || Date.now()}`;
+
+  console.log('[MessageItem] markdownKey:', markdownKey);
 
   return (
     <div
       key={msg.id}
-      className={`message ${msg.role === 'user' ? 'message-user' : 'message-assistant'}`}
+      className={`message ${isAssistant ? 'message-assistant' : 'message-user'}`}
     >
       <div className="message-content-wrapper">
         <Avatar
-          icon={msg.role === 'user' ? <UserOutlined /> : <RobotOutlined />}
-          className={msg.role === 'user' ? 'avatar-user' : 'avatar-assistant'}
+          icon={isAssistant ? <RobotOutlined /> : <UserOutlined />}
+          className={isAssistant ? 'avatar-assistant' : 'avatar-user'}
         />
         <div className="message-wrapper">
           <div className="message-bubble">
-            {content}
+            {isAssistant ? (
+              isStreaming ? (
+                <div className="message-text streaming-text">{msg.content || '...'}</div>
+              ) : (
+                <MarkdownRenderer key={markdownKey} content={msg.content || '...'} />
+              )
+            ) : (
+              <div className="message-text">{msg.content || '...'}</div>
+            )}
             <div className="message-time">{formatTime(msg.timestamp)}</div>
           </div>
           <Tooltip title="删除消息">
@@ -49,15 +65,7 @@ const MessageItem = memo(({ msg, onDelete, formatTime }) => {
       </div>
     </div>
   );
-}, (prevProps, nextProps) => {
-  // 自定义比较函数：只在关键属性变化时重新渲染
-  return (
-    prevProps.msg.id === nextProps.msg.id &&
-    prevProps.msg.content === nextProps.msg.content &&
-    prevProps.msg.isStreaming === nextProps.msg.isStreaming &&
-    prevProps.msg.role === nextProps.msg.role
-  );
-});
+};
 
 MessageItem.displayName = 'MessageItem';
 
@@ -85,6 +93,8 @@ const ChatWindow = () => {
   const [sessionId, setSessionId] = useState(null);
   const [useStream, setUseStream] = useState(true);
   const messagesEndRef = useRef(null);
+  const chatMessagesRef = useRef(null);
+  const hasScrolledToBottom = useRef(false);
 
   // 初始化 SessionId 并加载历史记录
   useEffect(() => {
@@ -119,7 +129,20 @@ const ChatWindow = () => {
 
   // Auto scroll to bottom
   useEffect(() => {
-    scrollToBottom();
+    if (messages.length > 0) {
+      if (!hasScrolledToBottom.current) {
+        // 首次加载，立即滚动到底部（无动画）
+        setTimeout(() => {
+          if (chatMessagesRef.current) {
+            chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight;
+            hasScrolledToBottom.current = true;
+          }
+        }, 100);
+      } else {
+        // 后续更新，平滑滚动
+        scrollToBottom();
+      }
+    }
   }, [messages, isTyping]);
 
   const handleSend = async () => {
@@ -257,7 +280,7 @@ const ChatWindow = () => {
       )}
 
       {/* Messages Area */}
-      <div className="chat-messages">
+      <div className="chat-messages" ref={chatMessagesRef}>
         {messages.length === 0 ? (
           <div className="chat-empty">
             <RobotOutlined style={{ fontSize: 64, color: '#d9d9d9' }} />

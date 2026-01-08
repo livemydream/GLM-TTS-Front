@@ -98,7 +98,7 @@ class ChatStore extends EventEmitter {
         break;
 
       case ChatActionTypes.UPDATE_MESSAGE:
-        const wasStreaming = this.messages.find(m => m.id === action.messageId)?.isStreaming;
+        { const wasStreaming = this.messages.find(m => m.id === action.messageId)?.isStreaming;
         this.messages = this.messages.map(msg =>
           msg.id === action.messageId ? {
             ...msg,
@@ -107,13 +107,20 @@ class ChatStore extends EventEmitter {
         );
         // 如果之前是流式状态，现在结束了，需要立即更新
         const isStreaming = action.updates.isStreaming;
+        console.log('[UPDATE_MESSAGE]', {
+          messageId: action.messageId,
+          wasStreaming,
+          isStreaming,
+          updates: action.updates,
+          shouldImmediate: wasStreaming && !isStreaming
+        });
         if (wasStreaming && !isStreaming) {
           this.immediateEmit();
         } else {
           // 流式更新期间使用节流，减少闪烁
           this.scheduleEmit();
         }
-        break;
+        break; }
 
       case ChatActionTypes.SET_SESSION_ID:
         this.sessionId = action.sessionId;
