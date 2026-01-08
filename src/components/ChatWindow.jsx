@@ -86,11 +86,14 @@ const ChatWindow = () => {
   const [useStream, setUseStream] = useState(true);
   const messagesEndRef = useRef(null);
 
-  // 初始化 SessionId
+  // 初始化 SessionId 并加载历史记录
   useEffect(() => {
     const id = getOrCreateSessionId();
     setSessionId(id);
     ChatActions.setSessionId(id);
+
+    // 加载历史记录
+    ChatActionCreators.loadHistory(id)();
   }, []);
 
   // Load chat state from store
