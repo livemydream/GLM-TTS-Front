@@ -1,0 +1,141 @@
+import ChatActions from './ChatActions';
+import glmApi from '../services/api';
+
+/**
+ * 异步 Action Creators
+ * 处理 API 调用和业务逻辑
+ */
+
+export const ChatActionCreators = {
+  /**
+   * 发送消息并获取 AI 回复（普通模式）
+   */
+  sendMessage(sessionId, message) {
+    return async () => {
+      // 添加用户消息
+      ChatActions.addMessage({
+        content: message,
+        role: 'user',
+      });
+
+      // 显示输入指示器
+      ChatActions.setTyping(true);
+      ChatActions.resetError();
+
+      try {
+        const response = await glmApi.chat(sessionId, message);
+
+        // 隐藏输入指示器
+        ChatActions.setTyping(false);
+
+        // 添加 AI 回复
+        if (response && response.data) {
+          ChatActions.addMessage({
+            content: response.data,
+            role: 'assistant',
+          });
+
+          // 保存 sessionId
+          if (sessionId) {
+            ChatActions.setSessionId(sessionId);
+          }
+        }
+      } catch (error) {
+        ChatActions.setTyping(false);
+        ChatActions.setError(error.message || '发送消息失败');
+      }
+    };
+  },
+
+  /**
+   * 发送消息并获取流式回复（SSE）
+   */
+  sendMessageStream(sessionId, message) {
+    return () => {
+      // 添加用户消息
+      ChatActions.addMessage({
+        content: message,
+        role: 'user',
+      });
+
+      // 创建一个临时消息用于流式更新
+      const tempMessageId = Date.now();
+      ChatActions.addMessage({
+        id: tempMessageId,
+        content: '',
+        role: 'assistant',
+        isStreaming: true,
+      });
+
+      let fullContent = '';
+
+      glmApi.chatStream(
+        sessionId,
+        message,
+        // onChunk - 收到每个数据块
+        (chunk) => {
+          fullContent += chunk;
+          ChatActions.updateMessage(tempMessageId, {
+            content: fullContent,
+          });
+        },
+        // onComplete - 流结束
+        () => {
+          ChatActions.updateMessage(tempMessageId, {
+            isStreaming: false,
+          });
+          if (sessionId) {
+            ChatActions.setSessionId(sessionId);
+          }
+        },
+        // onError - 发生错误
+        (error) => {
+          ChatActions.setError(error.message || '流式连接失败');
+          ChatActions.updateMessage(tempMessageId, {
+            content: fullContent || '[连接中断]',
+          });
+        }
+      );
+    };
+  },
+
+  /**
+   * 加载历史记录
+   */
+  loadHistory(sessionId) {
+    return async () => {
+      try {
+        const response = await glmApi.getHistory(sessionId);
+
+        if (response && response.data) {
+          const historyMessages = response.data.history.map((content, index) => ({
+            id: Date.now() + index,
+            content,
+            role: index % 2 === 0 ? 'user' : 'assistant',
+          }));
+
+          ChatActions.loadHistory(historyMessages);
+          ChatActions.setSessionId(sessionId);
+        }
+      } catch (error) {
+        ChatActions.setError(error.message || '加载历史失败');
+      }
+    };
+  },
+
+  /**
+   * 清除历史
+   */
+  clearHistory(sessionId) {
+    return async () => {
+      try {
+        await glmApi.clearHistory(sessionId);
+        ChatActions.clearMessages();
+      } catch (error) {
+        ChatActions.setError(error.message || '清除历史失败');
+      }
+    };
+  },
+};
+
+export default ChatActionCreators;

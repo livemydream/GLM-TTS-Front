@@ -1,0 +1,334 @@
+/* Markdown Content Styles */
+.markdown-content {
+  line-height: 1.7;
+  word-wrap: break-word;
+  overflow-x: auto;
+}
+
+/* Headings */
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  margin-top: 16px;
+  margin-bottom: 8px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: inherit;
+}
+
+.markdown-content h1 {
+  font-size: 1.5em;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  padding-bottom: 8px;
+}
+
+.message-assistant .markdown-content h1 {
+  color: #1a1a1a;
+  border-bottom-color: rgba(0, 0, 0, 0.1);
+}
+
+.message-user .markdown-content h1 {
+  color: #fff;
+  border-bottom-color: rgba(255, 255, 255, 0.3);
+}
+
+.markdown-content h2 {
+  font-size: 1.3em;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  padding-bottom: 6px;
+}
+
+.message-assistant .markdown-content h2 {
+  color: #1a1a1a;
+  border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+
+.message-user .markdown-content h2 {
+  color: #fff;
+  border-bottom-color: rgba(255, 255, 255, 0.25);
+}
+
+.markdown-content h3 {
+  font-size: 1.15em;
+}
+
+.message-assistant .markdown-content h3 {
+  color: #1a1a1a;
+}
+
+.message-user .markdown-content h3 {
+  color: #fff;
+}
+
+.markdown-content h4 {
+  font-size: 1.05em;
+}
+
+.message-assistant .markdown-content h4 {
+  color: #1a1a1a;
+}
+
+.message-user .markdown-content h4 {
+  color: #fff;
+}
+
+.markdown-content h5,
+.markdown-content h6 {
+  font-size: 1em;
+}
+
+.message-assistant .markdown-content h5,
+.message-assistant .markdown-content h6 {
+  color: #1a1a1a;
+}
+
+.message-user .markdown-content h5,
+.message-user .markdown-content h6 {
+  color: #fff;
+}
+
+/* Paragraphs */
+.markdown-content p {
+  margin: 8px 0;
+  color: inherit;
+}
+
+.markdown-content p + p {
+  margin-top: 12px;
+}
+
+.message-assistant .markdown-content p {
+  color: #1a1a1a;
+}
+
+.message-user .markdown-content p {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* Lists */
+.markdown-content ul,
+.markdown-content ol {
+  margin: 8px 0;
+  padding-left: 24px;
+  color: inherit;
+}
+
+.message-assistant .markdown-content ul,
+.message-assistant .markdown-content ol {
+  color: #1a1a1a;
+}
+
+.message-user .markdown-content ul,
+.message-user .markdown-content ol {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.markdown-content li {
+  margin: 4px 0;
+}
+
+.markdown-content li > p {
+  margin: 4px 0;
+}
+
+/* Inline Code */
+.markdown-content code {
+  background: rgba(0, 0, 0, 0.06);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.9em;
+  color: #d63384;
+}
+
+.markdown-content pre code {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+.message-user .markdown-content code {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+/* Code Blocks */
+.markdown-content pre {
+  background: #f6f8fa;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  margin: 12px 0;
+  overflow-x: auto;
+  padding: 12px;
+}
+
+.markdown-content pre code {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.875em;
+  line-height: 1.6;
+  color: #24292e;
+}
+
+.message-user .markdown-content pre {
+  background: rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.message-user .markdown-content pre code {
+  color: #fff;
+}
+
+/* Blockquotes */
+.markdown-content blockquote {
+  margin: 12px 0;
+  padding: 8px 16px;
+  border-left: 4px solid;
+  background: rgba(0, 0, 0, 0.03);
+  color: #656d76;
+}
+
+.message-assistant .markdown-content blockquote {
+  border-color: #667eea;
+}
+
+.message-user .markdown-content blockquote {
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Tables */
+.markdown-content .table-wrapper {
+  overflow-x: auto;
+  margin: 12px 0;
+}
+
+.markdown-content table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.9em;
+}
+
+.markdown-content th,
+.markdown-content td {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.message-user .markdown-content th,
+.message-user .markdown-content td {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.markdown-content th {
+  background: rgba(0, 0, 0, 0.04);
+  font-weight: 600;
+}
+
+.message-user .markdown-content th {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.markdown-content tr:nth-child(even) {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.message-user .markdown-content tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Links */
+.markdown-content a {
+  color: #667eea;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.markdown-content a:hover {
+  border-bottom-color: #667eea;
+}
+
+.message-user .markdown-content a {
+  color: #fff;
+  text-decoration: underline;
+}
+
+/* Horizontal Rule */
+.markdown-content hr {
+  border: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  margin: 16px 0;
+}
+
+.message-user .markdown-content hr {
+  border-top-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Images */
+.markdown-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 8px 0;
+}
+
+/* Strong and Emphasis */
+.markdown-content strong {
+  font-weight: 600;
+  color: inherit;
+}
+
+.message-assistant .markdown-content strong {
+  color: #1a1a1a;
+}
+
+.message-user .markdown-content strong {
+  color: #fff;
+}
+
+.markdown-content em {
+  font-style: italic;
+  color: inherit;
+}
+
+.message-assistant .markdown-content em {
+  color: #1a1a1a;
+}
+
+.message-user .markdown-content em {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* Task Lists */
+.markdown-content input[type="checkbox"] {
+  margin-right: 8px;
+  cursor: pointer;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .markdown-content h1 {
+    font-size: 1.3em;
+  }
+
+  .markdown-content h2 {
+    font-size: 1.15em;
+  }
+
+  .markdown-content h3 {
+    font-size: 1.05em;
+  }
+
+  .markdown-content pre {
+    font-size: 0.8em;
+    padding: 8px;
+  }
+}
