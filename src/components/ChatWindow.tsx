@@ -22,6 +22,8 @@ const MessageItem = React.memo<MessageItemProps>(
   ({ msg, onDelete, formatTime }) => {
     const isAssistant = msg.role === 'assistant';
 
+    console.log('[MessageItem render] id:', msg.id, 'content:', msg.content.substring(0, 20) + '...', 'isStreaming:', msg.isStreaming);
+
     return (
       <div className={`message ${isAssistant ? 'message-assistant' : 'message-user'}`}>
         <div className="message-content-wrapper">
@@ -63,8 +65,10 @@ const MessageItem = React.memo<MessageItemProps>(
       </div>
     );
   },
-  // 🔥 只要 msg 引用不变，就不重渲染
-  (prev, next) => prev.msg === next.msg
+  // 🔥 比较 content 和 isStreaming，而不是整个引用
+  (prev, next) =>
+    prev.msg.content === next.msg.content &&
+    prev.msg.isStreaming === next.msg.isStreaming
 );
 
 MessageItem.displayName = 'MessageItem';
@@ -110,7 +114,13 @@ const ChatWindow: React.FC = () => {
   useEffect(() => {
     const loadState = () => {
       const storeMessages = ChatStore.getMessages();
-      setMessages(storeMessages);
+      console.log('[loadState] messages count:', storeMessages.length);
+      const lastMsg = storeMessages[storeMessages.length - 1];
+      console.log('[loadState] last message:', lastMsg);
+      console.log('[loadState] last message isStreaming:', lastMsg?.isStreaming);
+
+      // 🔥 创建新数组和新对象引用，确保 React 检测到变化
+      setMessages(storeMessages.map(msg => ({ ...msg })));
       setIsTyping(ChatStore.getTyping());
       setError(ChatStore.getError());
     };

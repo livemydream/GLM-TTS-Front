@@ -280,11 +280,14 @@
 
 /* 流式文本样式 - 防止闪烁 */
 .streaming-text {
-  display: inline;
+  display: block;
+  white-space: pre-wrap;
+  word-wrap: break-word;
   min-height: 1.5em;
-  will-change: contents;
-  /* 减少重绘范围 */
-  contain: content;
+  font-family: inherit;
+  line-height: 1.5;
+  margin: 0;
+  padding: 0;
 }
 
 .message-time {

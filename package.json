@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
+    "@uiw/react-markdown-preview": "^5.1.5",
     "antd": "^6.1.4",
     "events": "^3.3.0",
     "markdown-to-jsx": "^9.5.1",

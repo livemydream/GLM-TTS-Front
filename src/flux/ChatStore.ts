@@ -58,7 +58,10 @@ class ChatStore extends EventEmitter implements ChatStoreInterface {
 
       case ChatActionTypes.UPDATE_MESSAGE: {
         const index = this.messages.findIndex(m => m.id === action.messageId);
-        if (index === -1) break;
+        if (index === -1) {
+          console.log('[ChatStore UPDATE_MESSAGE] Message not found, id:', action.messageId);
+          break;
+        }
 
         const prev = this.messages[index];
         const wasStreaming = prev.isStreaming;
@@ -71,6 +74,7 @@ class ChatStore extends EventEmitter implements ChatStoreInterface {
         };
 
         const isStreaming = this.messages[index].isStreaming;
+        console.log('[ChatStore UPDATE_MESSAGE] content:', this.messages[index].content.substring(0, 20) + '...', 'isStreaming:', isStreaming);
 
         if (wasStreaming && !isStreaming) {
           // streaming → done
