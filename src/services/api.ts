@@ -1,4 +1,11 @@
 import { config } from '@/config/env';
+import type {
+  ApiResponse,
+  ChatHistoryResponse,
+  StreamCallback,
+  StreamCompleteCallback,
+  StreamErrorCallback,
+} from '@/types';
 
 /**
  * API 服务模块
@@ -7,11 +14,15 @@ import { config } from '@/config/env';
 
 const API_BASE_URL = config.apiBaseUrl;
 
+interface RequestOptions extends RequestInit {
+  headers?: Record<string, string>;
+}
+
 /**
  * 通用请求封装
  */
-async function request(url, options = {}) {
-  const requestOptions = {
+async function request<T = any>(url: string, options: RequestOptions = {}): Promise<T> {
+  const requestOptions: RequestInit = {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -33,7 +44,7 @@ async function request(url, options = {}) {
       return await response.json();
     }
 
-    return await response.text();
+    return await response.text() as T;
   } catch (error) {
     console.error('API request failed:', error);
     throw error;
@@ -48,7 +59,7 @@ export const glmApi = {
    * 普通聊天接口
    * POST /api/glm/chat
    */
-  async chat(sessionId, message) {
+  async chat(sessionId: string | null, message: string): Promise<ApiResponse<string>> {
     return request('/glm/chat', {
       method: 'POST',
       body: JSON.stringify({
@@ -63,7 +74,13 @@ export const glmApi = {
    * POST /api/glm/chat/stream
    * 返回 EventSource 或使用 fetch + reader
    */
-  async chatStream(sessionId, message, onChunk, onComplete, onError) {
+  async chatStream(
+    sessionId: string | null,
+    message: string,
+    onChunk: StreamCallback,
+    onComplete?: StreamCompleteCallback,
+    onError?: StreamErrorCallback
+  ): Promise<void> {
     try {
       const response = await fetch(`${API_BASE_URL}/glm/chat/stream`, {
         method: 'POST',
@@ -80,7 +97,11 @@ export const glmApi = {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const reader = response.body.getReader();
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('Response body is not readable');
+      }
+
       const decoder = new TextDecoder();
       let buffer = '';
 
@@ -103,14 +124,14 @@ export const glmApi = {
           if (line.startsWith('data:')) {
             const data = line.slice(5).trim();
             if (data && data !== '[DONE]') {
-              onChunk?.(data);
+              onChunk(data);
             }
           }
         }
       }
     } catch (error) {
       console.error('Stream chat failed:', error);
-      onError?.(error);
+      onError?.(error as Error);
       throw error;
     }
   },
@@ -119,7 +140,7 @@ export const glmApi = {
    * 获取会话历史
    * GET /api/glm/history?sessionId=xxx
    */
-  async getHistory(sessionId) {
+  async getHistory(sessionId: string): Promise<ApiResponse<ChatHistoryResponse>> {
     return request(`/glm/history?sessionId=${encodeURIComponent(sessionId)}`);
   },
 
@@ -127,7 +148,7 @@ export const glmApi = {
    * 清除会话历史
    * DELETE /api/glm/history?sessionId=xxx
    */
-  async clearHistory(sessionId) {
+  async clearHistory(sessionId: string): Promise<ApiResponse<void>> {
     return request(`/glm/history?sessionId=${encodeURIComponent(sessionId)}`, {
       method: 'DELETE',
     });

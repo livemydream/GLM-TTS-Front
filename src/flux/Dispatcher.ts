@@ -1,42 +1,39 @@
+import type { ChatAction, DispatcherInterface } from '@/types';
+
 // Simple EventEmitter implementation for browser
 class EventEmitter {
-  constructor() {
-    this.events = {};
-  }
+  events: Record<string, Array<(...args: any[]) => void>> = {};
 
-  on(event, callback) {
+  on(event: string, callback: (...args: any[]) => void): void {
     if (!this.events[event]) {
       this.events[event] = [];
     }
     this.events[event].push(callback);
   }
 
-  off(event, callback) {
+  off(event: string, callback: (...args: any[]) => void): void {
     if (!this.events[event]) return;
     this.events[event] = this.events[event].filter(cb => cb !== callback);
   }
 
-  emit(event, ...args) {
+  emit(event: string, ...args: any[]): void {
     if (!this.events[event]) return;
     this.events[event].forEach(callback => callback(...args));
   }
 }
 
-class Dispatcher extends EventEmitter {
-  constructor() {
-    super();
-    this.isDispatching = false;
-    this.actionHandlers = [];
-  }
+class Dispatcher extends EventEmitter implements DispatcherInterface {
+  private isDispatching: boolean = false;
+  private actionHandlers: Array<(action: ChatAction) => void> = [];
 
-  register(actionHandler) {
+  register(actionHandler: (action: ChatAction) => void): () => void {
     this.actionHandlers.push(actionHandler);
     return () => {
       this.actionHandlers = this.actionHandlers.filter(handler => handler !== actionHandler);
     };
   }
 
-  dispatch(action) {
+  dispatch(action: ChatAction): void {
     if (this.isDispatching) {
       throw new Error('Cannot dispatch in the middle of a dispatch');
     }
@@ -48,10 +45,6 @@ class Dispatcher extends EventEmitter {
     } finally {
       this.isDispatching = false;
     }
-  }
-
-  waitFor(promise) {
-    return promise;
   }
 }
 

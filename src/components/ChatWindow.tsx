@@ -5,78 +5,78 @@ import ChatStore from '@/flux/ChatStore';
 import ChatActions from '@/flux/ChatActions';
 import ChatActionCreators from '@/flux/ChatActionCreators';
 import MarkdownRenderer from './MarkdownRenderer';
+import type { Message } from '@/types';
 import './ChatWindow.css';
 
 const { TextArea } = Input;
 
+// 消息项组件 Props
+interface MessageItemProps {
+  msg: Message;
+  onDelete: (messageId: number) => void;
+  formatTime: (timestamp?: string) => string;
+}
+
 // 消息项组件
-const MessageItem = ({ msg, onDelete, formatTime }) => {
-  console.log('[MessageItem render]', {
-    id: msg.id,
-    role: msg.role,
-    isStreaming: msg.isStreaming,
-    contentLength: msg.content?.length,
-    _version: msg._version,
-  });
+const MessageItem = React.memo<MessageItemProps>(
+  ({ msg, onDelete, formatTime }) => {
+    const isAssistant = msg.role === 'assistant';
 
-  const isAssistant = msg.role === 'assistant';
-  const isStreaming = msg.isStreaming === true;
+    return (
+      <div className={`message ${isAssistant ? 'message-assistant' : 'message-user'}`}>
+        <div className="message-content-wrapper">
+          <Avatar
+            size={40}
+            icon={isAssistant ? <RobotOutlined /> : <UserOutlined />}
+            className={isAssistant ? 'avatar-assistant' : 'avatar-user'}
+          />
 
-  // 流式阶段使用 streaming key，完成后使用 final key，强制重新创建组件
-  const markdownKey = isStreaming
-    ? `streaming-${msg.id}`
-    : `final-${msg.id}-${msg._version || Date.now()}`;
-
-  console.log('[MessageItem] markdownKey:', markdownKey);
-
-  return (
-    <div
-      key={msg.id}
-      className={`message ${isAssistant ? 'message-assistant' : 'message-user'}`}
-    >
-      <div className="message-content-wrapper">
-        <Avatar
-          icon={isAssistant ? <RobotOutlined /> : <UserOutlined />}
-          className={isAssistant ? 'avatar-assistant' : 'avatar-user'}
-        />
-        <div className="message-wrapper">
-          <div className="message-bubble">
-            {isAssistant ? (
-              isStreaming ? (
-                <div className="message-text streaming-text">{msg.content || '...'}</div>
+          <div className="message-wrapper">
+            <div className="message-bubble">
+              {isAssistant ? (
+                msg.isStreaming ? (
+                  <pre className="streaming-text">
+                    {msg.content || '...'}
+                  </pre>
+                ) : (
+                  <MarkdownRenderer content={msg.content || '...'} />
+                )
               ) : (
-                <MarkdownRenderer key={markdownKey} content={msg.content || '...'} />
-              )
-            ) : (
-              <div className="message-text">{msg.content || '...'}</div>
-            )}
-            <div className="message-time">{formatTime(msg.timestamp)}</div>
+                <div className="message-text">{msg.content}</div>
+              )}
+
+              <div className="message-time">
+                {formatTime(msg.timestamp)}
+              </div>
+            </div>
+
+            <Tooltip title="删除消息">
+              <Button
+                type="text"
+                size="small"
+                icon={<DeleteOutlined />}
+                onClick={() => onDelete(msg.id)}
+              />
+            </Tooltip>
           </div>
-          <Tooltip title="删除消息">
-            <Button
-              type="text"
-              size="small"
-              icon={<DeleteOutlined />}
-              onClick={() => onDelete(msg.id)}
-              className="delete-message-button"
-            />
-          </Tooltip>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  },
+  // 🔥 只要 msg 引用不变，就不重渲染
+  (prev, next) => prev.msg === next.msg
+);
 
 MessageItem.displayName = 'MessageItem';
 
 // SessionId 管理
 const SESSION_STORAGE_KEY = 'glm_chat_session_id';
 
-const generateSessionId = () => {
+const generateSessionId = (): string => {
   return 'session_' + Date.now() + '_' + Math.random().toString(36).substring(2, 15);
 };
 
-const getOrCreateSessionId = () => {
+const getOrCreateSessionId = (): string => {
   let sessionId = localStorage.getItem(SESSION_STORAGE_KEY);
   if (!sessionId) {
     sessionId = generateSessionId();
@@ -85,15 +85,15 @@ const getOrCreateSessionId = () => {
   return sessionId;
 };
 
-const ChatWindow = () => {
-  const [messages, setMessages] = useState([]);
+const ChatWindow: React.FC = () => {
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [error, setError] = useState(null);
-  const [sessionId, setSessionId] = useState(null);
+  const [error, setError] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [useStream, setUseStream] = useState(true);
-  const messagesEndRef = useRef(null);
-  const chatMessagesRef = useRef(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatMessagesRef = useRef<HTMLDivElement>(null);
   const hasScrolledToBottom = useRef(false);
 
   // 初始化 SessionId 并加载历史记录
@@ -109,7 +109,7 @@ const ChatWindow = () => {
   // Load chat state from store
   useEffect(() => {
     const loadState = () => {
-      const storeMessages = [...ChatStore.getMessages()];
+      const storeMessages = ChatStore.getMessages();
       setMessages(storeMessages);
       setIsTyping(ChatStore.getTyping());
       setError(ChatStore.getError());
@@ -163,11 +163,11 @@ const ChatWindow = () => {
         await ChatActionCreators.sendMessage(sessionId, message)();
       }
     } catch (err) {
-      setError(err.message || '发送消息失败');
+      setError((err as Error).message || '发送消息失败');
     }
   };
 
-  const handleKeyPress = (e) => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -180,7 +180,7 @@ const ChatWindow = () => {
         await ChatActionCreators.clearHistory(sessionId)();
         antMessage.success('对话已清空');
       } catch (err) {
-        setError(err.message || '清空对话失败');
+        setError((err as Error).message || '清空对话失败');
       }
     } else {
       ChatActions.clearMessages();
@@ -201,12 +201,13 @@ const ChatWindow = () => {
     antMessage.success('已创建新对话');
   };
 
-  const handleDeleteMessage = (messageId) => {
+  const handleDeleteMessage = (messageId: number) => {
     ChatActions.deleteMessage(messageId);
     antMessage.success('消息已删除');
   };
 
-  const formatTime = (timestamp) => {
+  const formatTime = (timestamp?: string): string => {
+    if (!timestamp) return '';
     const date = new Date(timestamp);
     return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
   };
@@ -297,10 +298,11 @@ const ChatWindow = () => {
             />
           ))
         )}
-        {isTyping && (
+        {isTyping && !messages.some(m => m.isStreaming) && (
           <div className="message message-assistant">
             <div className="message-content-wrapper">
               <Avatar
+                size={40}
                 icon={<RobotOutlined />}
                 className="avatar-assistant"
               />

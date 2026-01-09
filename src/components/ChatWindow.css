@@ -220,6 +220,13 @@
   flex-shrink: 0;
 }
 
+/* 确保 Avatar 组件不被压扁 */
+.message-content-wrapper .ant-avatar {
+  flex-shrink: 0;
+  min-width: 40px;
+  min-height: 40px;
+}
+
 .message-wrapper {
   display: flex;
   flex-direction: column;

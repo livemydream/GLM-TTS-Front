@@ -7,7 +7,11 @@ import './MarkdownRenderer.css';
  * Markdown 渲染组件
  */
 
-const MarkdownRenderer = ({ content }) => {
+interface MarkdownRendererProps {
+  content: string;
+}
+
+const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -18,12 +22,6 @@ const MarkdownRenderer = ({ content }) => {
 
     return () => clearTimeout(timer);
   }, []);
-
-  console.log('[MarkdownRenderer render]', {
-    contentLength: content?.length,
-    ready,
-    hasMarkdown: content?.includes('**'),
-  });
 
   if (!content) {
     return <div className="markdown-content">...</div>;

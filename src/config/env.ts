@@ -10,8 +10,8 @@ export const config = {
   appEnv: import.meta.env.VITE_APP_ENV || 'development',
 
   // Chat Settings
-  chatTimeout: parseInt(import.meta.env.VITE_CHAT_TIMEOUT || '30000'),
-  maxMessageLength: parseInt(import.meta.env.VITE_MAX_MESSAGE_LENGTH || '5000'),
+  chatTimeout: Number(import.meta.env.VITE_CHAT_TIMEOUT || '30000'),
+  maxMessageLength: Number(import.meta.env.VITE_MAX_MESSAGE_LENGTH || '5000'),
 
   // Features
   enableSound: import.meta.env.VITE_ENABLE_SOUND === 'true',
@@ -21,6 +21,6 @@ export const config = {
   // Helpers
   isDevelopment: import.meta.env.DEV,
   isProduction: import.meta.env.PROD,
-};
+} as const;
 
 export default config;
