@@ -1,6 +1,6 @@
 import Dispatcher from './Dispatcher';
 import * as ChatActionTypes from './ChatActionTypes';
-import type { Message, ChatAction } from '@/types';
+import type { Message, ChatAction, RoleConfig } from '@/types';
 
 interface AddMessageInput {
   content: string;
@@ -85,6 +85,14 @@ export const ChatActions = {
     const action: ChatAction = {
       type: ChatActionTypes.SET_SESSION_ID,
       sessionId
+    };
+    Dispatcher.dispatch(action);
+  },
+
+  setRoleConfig(roleConfig: RoleConfig): void {
+    const action: ChatAction = {
+      type: ChatActionTypes.SET_ROLE_CONFIG,
+      roleConfig
     };
     Dispatcher.dispatch(action);
   }

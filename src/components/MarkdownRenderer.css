@@ -94,6 +94,8 @@
 .markdown-content p {
   margin: 8px 0;
   color: inherit;
+  /* 🔥 支持软换行：保留单个换行符 */
+  white-space: pre-wrap;
 }
 
 .markdown-content p + p {
@@ -128,6 +130,8 @@
 
 .markdown-content li {
   margin: 4px 0;
+  /* 🔥 支持列表项内的软换行 */
+  white-space: pre-wrap;
 }
 
 .markdown-content li > p {

@@ -8,3 +8,4 @@ export const LOAD_HISTORY = 'LOAD_HISTORY';
 export const DELETE_MESSAGE = 'DELETE_MESSAGE';
 export const UPDATE_MESSAGE = 'UPDATE_MESSAGE';
 export const SET_SESSION_ID = 'SET_SESSION_ID';
+export const SET_ROLE_CONFIG = 'SET_ROLE_CONFIG';

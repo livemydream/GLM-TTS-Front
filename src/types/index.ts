@@ -1,6 +1,25 @@
 // 消息角色类型
 export type MessageRole = 'user' | 'assistant';
 
+// 角色预设类型
+export interface PresetRole {
+  id: string;
+  name: string;
+  description: string;
+  systemPrompt: string;
+  icon?: string;
+}
+
+// 角色模式类型
+export type RolePlayMode = 'none' | 'preset' | 'custom';
+
+// 角色配置
+export interface RoleConfig {
+  mode: RolePlayMode;
+  presetRole?: PresetRole;
+  customPrompt?: string;
+}
+
 // 消息类型
 export interface Message {
   id: number;
@@ -56,6 +75,11 @@ export interface LoadHistoryAction {
   messages: Message[];
 }
 
+export interface SetRoleConfigAction {
+  type: 'SET_ROLE_CONFIG';
+  roleConfig: RoleConfig;
+}
+
 export type ChatAction =
   | AddMessageAction
   | UpdateMessageAction
@@ -65,7 +89,8 @@ export type ChatAction =
   | SetErrorAction
   | ResetErrorAction
   | SetSessionIdAction
-  | LoadHistoryAction;
+  | LoadHistoryAction
+  | SetRoleConfigAction;
 
 // API 响应类型
 export interface ApiResponse<T = any> {
@@ -90,6 +115,8 @@ export interface ChatStoreInterface {
   getMessages(): Message[];
   getTyping(): boolean;
   getError(): string | null;
+  getSessionId(): string | null;
+  getRoleConfig(): RoleConfig;
   addChangeListener(callback: () => void): () => void;
 }
 

@@ -5,6 +5,7 @@ import type {
   StreamCallback,
   StreamCompleteCallback,
   StreamErrorCallback,
+  RoleConfig,
 } from '@/types';
 
 /**
@@ -49,6 +50,43 @@ async function request<T = any>(url: string, options: RequestOptions = {}): Prom
     console.error('API request failed:', error);
     throw error;
   }
+}
+
+  const parseTemplate = (input: string): string => {
+  let result = '';
+  let i = 0;
+
+  while (i < input.length) {
+    const start = input.indexOf('$${', i);
+    if (start === -1) break;
+
+    let depth = 1;
+    let j = start + 3;
+
+    while (j < input.length && depth > 0) {
+      if (input.startsWith('$${', j)) {
+        depth++;
+        j += 3;
+      } else if (input.startsWith('}$$', j)) {
+        depth--;
+        if (depth === 0) break;
+        j += 3;
+      } else {
+        j++;
+      }
+    }
+
+    if (depth === 0) {
+      // 只剥一层
+      const content = input.substring(start + 3, j);
+      result += content;
+      i = j + 3;
+    } else {
+      break;
+    }
+  }
+
+  return result;
 }
 
 /**
@@ -115,28 +153,33 @@ export const glmApi = {
 
         // 解码并处理数据块
         buffer += decoder.decode(value, { stream: true });
-
+        debugger
         // 处理 SSE 格式数据 (data: xxx\n\n)
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || ''; // 保留最后一个不完整的行
+        // debugger;
+        const lines = parseTemplate(buffer);
+        buffer = ""; // 保留最后一个不完整的行
 
-        for (const line of lines) {
-          if (line.startsWith('data:')) {
-            const data = line.slice(5).trim();
-            if (data && data !== '[DONE]') {
-              onChunk(data);
-            }
-          }
-        }
+        // for (const line of lines) {
+        //   console.log('[Stream chunk] line:', line);
+        //   if (line.startsWith('data:')) {
+        //     const data = line.slice(5).trim();
+        //     if (data === '[DONE]') {
+        //       // 🔥 遇到 [DONE] 标记，主动结束流
+        //       onComplete?.();
+        //       return;
+        //     }
+            // console.log('[Stream chunk] raw:', data);
+            onChunk(lines);
+            
+          // }
+        // }
       }
     } catch (error) {
       console.error('Stream chat failed:', error);
       onError?.(error as Error);
       throw error;
     }
-  },
-
-  /**
+  },  /**
    * 获取会话历史
    * GET /api/glm/history?sessionId=xxx
    */
@@ -151,6 +194,20 @@ export const glmApi = {
   async clearHistory(sessionId: string): Promise<ApiResponse<void>> {
     return request(`/glm/history?sessionId=${encodeURIComponent(sessionId)}`, {
       method: 'DELETE',
+    });
+  },
+
+  /**
+   * 设置角色
+   * POST /api/glm/character
+   */
+  async setCharacter(sessionId: string, characterDescription: string): Promise<ApiResponse<void>> {
+    return request('/glm/character', {
+      method: 'POST',
+      body: JSON.stringify({
+        sessionId,
+        characterDescription,
+      }),
     });
   },
 };

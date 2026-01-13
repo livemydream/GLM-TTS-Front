@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Input, Button, Avatar, Tag, message as antMessage, Tooltip, Switch, Space } from 'antd';
-import { SendOutlined, UserOutlined, RobotOutlined, ClearOutlined, DeleteOutlined, ThunderboltOutlined, PlusOutlined } from '@ant-design/icons';
+import { Input, Button, Avatar, Tag, message as antMessage, Tooltip, Switch, Space, Badge } from 'antd';
+import { SendOutlined, UserOutlined, RobotOutlined, ClearOutlined, DeleteOutlined, ThunderboltOutlined, PlusOutlined, UserSwitchOutlined } from '@ant-design/icons';
 import ChatStore from '@/flux/ChatStore';
 import ChatActions from '@/flux/ChatActions';
 import ChatActionCreators from '@/flux/ChatActionCreators';
 import MarkdownRenderer from './MarkdownRenderer';
-import type { Message } from '@/types';
+import RoleSelector from './RoleSelector';
+import type { Message, RoleConfig } from '@/types';
 import './ChatWindow.css';
 
 const { TextArea } = Input;
@@ -22,7 +23,7 @@ const MessageItem = React.memo<MessageItemProps>(
   ({ msg, onDelete, formatTime }) => {
     const isAssistant = msg.role === 'assistant';
 
-    console.log('[MessageItem render] id:', msg.id, 'content:', msg.content.substring(0, 20) + '...', 'isStreaming:', msg.isStreaming);
+    // console.log('[MessageItem render] id:', msg.id, 'content:', msg.content.substring(0, 20) + '...', 'isStreaming:', msg.isStreaming);
 
     return (
       <div className={`message ${isAssistant ? 'message-assistant' : 'message-user'}`}>
@@ -51,7 +52,6 @@ const MessageItem = React.memo<MessageItemProps>(
                 {formatTime(msg.timestamp)}
               </div>
             </div>
-
             <Tooltip title="删除消息">
               <Button
                 type="text"
@@ -96,6 +96,8 @@ const ChatWindow: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [useStream, setUseStream] = useState(true);
+  const [roleConfig, setRoleConfig] = useState<RoleConfig>({ mode: 'none' });
+  const [showRoleSelector, setShowRoleSelector] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatMessagesRef = useRef<HTMLDivElement>(null);
   const hasScrolledToBottom = useRef(false);
@@ -114,15 +116,16 @@ const ChatWindow: React.FC = () => {
   useEffect(() => {
     const loadState = () => {
       const storeMessages = ChatStore.getMessages();
-      console.log('[loadState] messages count:', storeMessages.length);
+      // console.log('[loadState] messages count:', storeMessages.length);
       const lastMsg = storeMessages[storeMessages.length - 1];
-      console.log('[loadState] last message:', lastMsg);
-      console.log('[loadState] last message isStreaming:', lastMsg?.isStreaming);
+      // console.log('[loadState] last message:', lastMsg);
+      // console.log('[loadState] last message isStreaming:', lastMsg?.isStreaming);
 
       // 🔥 创建新数组和新对象引用，确保 React 检测到变化
       setMessages(storeMessages.map(msg => ({ ...msg })));
       setIsTyping(ChatStore.getTyping());
       setError(ChatStore.getError());
+      setRoleConfig(ChatStore.getRoleConfig());
     };
 
     loadState();
@@ -216,6 +219,42 @@ const ChatWindow: React.FC = () => {
     antMessage.success('消息已删除');
   };
 
+  const handleRoleConfigConfirm = async (config: RoleConfig) => {
+    const roleName = config.mode === 'preset'
+      ? config.presetRole?.name
+      : config.mode === 'custom'
+      ? '自定义'
+      : null;
+
+    // 如果选择了角色，调用 /api/glm/character 接口设置角色
+    if (config.mode !== 'none') {
+      try {
+        const characterDescription = config.mode === 'preset'
+          ? config.presetRole?.systemPrompt
+          : config.customPrompt;
+
+        if (characterDescription && sessionId) {
+          await ChatActionCreators.setCharacter(sessionId, characterDescription)();
+
+          // 接口调用成功后，更新状态并清除本地消息历史
+          ChatActions.setRoleConfig(config);
+          ChatActions.clearMessages();
+          antMessage.success(`已切换到 ${roleName} 角色`);
+        } else if (!sessionId) {
+          antMessage.error('会话ID不存在，请刷新页面重试');
+        }
+      } catch (err) {
+        antMessage.error('设置角色失败');
+        // 失败时恢复为无角色模式
+        ChatActions.setRoleConfig({ mode: 'none' });
+      }
+    } else {
+      // 切换到普通模式，只更新状态
+      ChatActions.setRoleConfig(config);
+      antMessage.success('已切换到普通模式');
+    }
+  };
+
   const formatTime = (timestamp?: string): string => {
     if (!timestamp) return '';
     const date = new Date(timestamp);
@@ -229,7 +268,19 @@ const ChatWindow: React.FC = () => {
         <div className="chat-header-info">
           <RobotOutlined className="chat-icon" />
           <div>
-            <h3>AI 智能助手</h3>
+            <h3>
+              AI 智能助手
+              {roleConfig.mode !== 'none' && (
+                <Tag
+                  color={roleConfig.mode === 'preset' ? 'blue' : 'green'}
+                  style={{ marginLeft: 8, verticalAlign: 'middle' }}
+                >
+                  {roleConfig.mode === 'preset'
+                    ? `${roleConfig.presetRole?.icon} ${roleConfig.presetRole?.name}`
+                    : '自定义角色'}
+                </Tag>
+              )}
+            </h3>
             <div className="chat-header-controls">
               <span className="chat-status">
                 {isTyping ? (
@@ -258,6 +309,16 @@ const ChatWindow: React.FC = () => {
           </div>
         </div>
         <Space>
+          <Tooltip title="角色扮演设置">
+            <Badge dot={roleConfig.mode !== 'none'}>
+              <Button
+                type="text"
+                icon={<UserSwitchOutlined />}
+                onClick={() => setShowRoleSelector(true)}
+                className="role-selector-button"
+              />
+            </Badge>
+          </Tooltip>
           <Tooltip title="新建对话（生成新会话ID）">
             <Button
               type="text"
@@ -336,7 +397,9 @@ const ChatWindow: React.FC = () => {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="输入消息... (Enter 发送, Shift+Enter 换行)"
+            placeholder={roleConfig.mode !== 'none'
+              ? `与 ${roleConfig.mode === 'preset' ? roleConfig.presetRole?.name : '自定义角色'} 对话...`
+              : '输入消息... (Enter 发送, Shift+Enter 换行)'}
             autoSize={{ minRows: 1, maxRows: 4 }}
             className="chat-input"
           />
@@ -351,6 +414,14 @@ const ChatWindow: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {/* Role Selector Modal */}
+      <RoleSelector
+        visible={showRoleSelector}
+        onClose={() => setShowRoleSelector(false)}
+        onConfirm={handleRoleConfigConfirm}
+        currentConfig={roleConfig}
+      />
     </div>
   );
 };

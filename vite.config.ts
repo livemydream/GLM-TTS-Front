@@ -12,6 +12,7 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    allowedHosts: ['zjs.nat100.top'],
     proxy: {
       '/api': {
         target: 'http://localhost:8080',

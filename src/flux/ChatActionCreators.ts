@@ -79,13 +79,24 @@ export const ChatActionCreators = {
         message,
         // onChunk - 收到每个数据块
         (chunk) => {
+          // console.log('[Stream chunk] raw:', JSON.stringify(chunk));
           fullContent += chunk;
+          // console.log('[Stream chunk] fullContent preview:', JSON.stringify(fullContent.substring(0, 50)));
           ChatActions.updateMessage(tempMessageId, {
             content: fullContent,
           });
         },
         // onComplete - 流结束
         () => {
+          // 🔥 打印完整的消息对象
+          console.log('[Stream onComplete] fullContent:', JSON.stringify(fullContent));
+          console.log('[Stream onComplete] message object:', {
+            id: tempMessageId,
+            content: fullContent,
+            isStreaming: false,
+            _version: Date.now(),
+          });
+
           // 隐藏输入指示器
           ChatActions.setTyping(false);
           // 添加一个随机数确保对象引用改变，触发更新
@@ -152,6 +163,20 @@ export const ChatActionCreators = {
         ChatActions.clearMessages();
       } catch (error) {
         ChatActions.setError((error as Error).message || '清除历史失败');
+      }
+    };
+  },
+
+  /**
+   * 设置角色
+   */
+  setCharacter(sessionId: string, characterDescription: string) {
+    return async () => {
+      try {
+        await glmApi.setCharacter(sessionId, characterDescription);
+      } catch (error) {
+        ChatActions.setError((error as Error).message || '设置角色失败');
+        throw error;
       }
     };
   },

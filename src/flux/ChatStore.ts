@@ -1,6 +1,6 @@
 import Dispatcher from './Dispatcher';
 import * as ChatActionTypes from './ChatActionTypes';
-import type { ChatAction, ChatStoreInterface, Message } from '@/types';
+import type { ChatAction, ChatStoreInterface, Message, RoleConfig } from '@/types';
 
 class EventEmitter {
   private events: Record<string, Array<() => void>> = {};
@@ -25,6 +25,7 @@ class ChatStore extends EventEmitter implements ChatStoreInterface {
   private isTyping: boolean = false;
   private error: string | null = null;
   private sessionId: string | null = null;
+  private roleConfig: RoleConfig = { mode: 'none' };
   private rafId: number | null = null;
 
   constructor() {
@@ -59,7 +60,7 @@ class ChatStore extends EventEmitter implements ChatStoreInterface {
       case ChatActionTypes.UPDATE_MESSAGE: {
         const index = this.messages.findIndex(m => m.id === action.messageId);
         if (index === -1) {
-          console.log('[ChatStore UPDATE_MESSAGE] Message not found, id:', action.messageId);
+          // console.log('[ChatStore UPDATE_MESSAGE] Message not found, id:', action.messageId);
           break;
         }
 
@@ -74,7 +75,7 @@ class ChatStore extends EventEmitter implements ChatStoreInterface {
         };
 
         const isStreaming = this.messages[index].isStreaming;
-        console.log('[ChatStore UPDATE_MESSAGE] content:', this.messages[index].content.substring(0, 20) + '...', 'isStreaming:', isStreaming);
+        // console.log('[ChatStore UPDATE_MESSAGE] content:', this.messages[index].content.substring(0, 20) + '...', 'isStreaming:', isStreaming);
 
         if (wasStreaming && !isStreaming) {
           // streaming → done
@@ -121,6 +122,11 @@ class ChatStore extends EventEmitter implements ChatStoreInterface {
         this.immediateEmit();
         break;
 
+      case ChatActionTypes.SET_ROLE_CONFIG:
+        this.roleConfig = action.roleConfig;
+        this.immediateEmit();
+        break;
+
       default:
         break;
     }
@@ -140,6 +146,10 @@ class ChatStore extends EventEmitter implements ChatStoreInterface {
 
   getSessionId(): string | null {
     return this.sessionId;
+  }
+
+  getRoleConfig(): RoleConfig {
+    return this.roleConfig;
   }
 
   addChangeListener(cb: () => void): () => void {
