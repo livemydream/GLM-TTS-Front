@@ -153,7 +153,7 @@ export const glmApi = {
 
         // 解码并处理数据块
         buffer += decoder.decode(value, { stream: true });
-        debugger
+        // debugger
         // 处理 SSE 格式数据 (data: xxx\n\n)
         // debugger;
         const lines = parseTemplate(buffer);
@@ -201,11 +201,12 @@ export const glmApi = {
    * 设置角色
    * POST /api/glm/character
    */
-  async setCharacter(sessionId: string, characterDescription: string): Promise<ApiResponse<void>> {
+  async setCharacter(sessionId: string, characterId: string, characterDescription: string): Promise<ApiResponse<void>> {
     return request('/glm/character', {
       method: 'POST',
       body: JSON.stringify({
         sessionId,
+        characterId,
         characterDescription,
       }),
     });

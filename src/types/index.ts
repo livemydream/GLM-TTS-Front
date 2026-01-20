@@ -1,5 +1,5 @@
 // 消息角色类型
-export type MessageRole = 'user' | 'assistant';
+export type MessageRole = 'user' | 'assistant' | 'system';
 
 // 角色预设类型
 export interface PresetRole {
@@ -99,9 +99,16 @@ export interface ApiResponse<T = any> {
   data: T;
 }
 
+// API 返回的角色信息
+export interface CharacterInfo {
+  characterId: string;
+  characterDescription: string;
+}
+
 export interface ChatHistoryResponse {
   sessionId: string;
   history: HistoryItem[];
+  character?: CharacterInfo;
 }
 
 export interface HistoryItem {

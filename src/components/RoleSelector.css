@@ -10,17 +10,20 @@
 
 .role-card {
   transition: all 0.3s ease;
-  border: 2px solid transparent;
+  border: 2px solid #f0f0f0;
+  cursor: pointer;
 }
 
 .role-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.2);
+  border-color: #667eea;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
 }
 
 .role-card.selected {
-  border-color: #1890ff;
-  background-color: #e6f7ff;
+  border-color: #667eea;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .role-card-content {

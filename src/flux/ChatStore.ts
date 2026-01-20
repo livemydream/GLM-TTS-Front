@@ -20,6 +20,10 @@ class EventEmitter {
   }
 }
 
+// LocalStorage keys
+const STORAGE_KEY_SESSION_ID = 'chat_session_id';
+const STORAGE_KEY_ROLE_CONFIG = 'chat_role_config';
+
 class ChatStore extends EventEmitter implements ChatStoreInterface {
   private messages: Message[] = [];
   private isTyping: boolean = false;
@@ -30,7 +34,38 @@ class ChatStore extends EventEmitter implements ChatStoreInterface {
 
   constructor() {
     super();
+    this.loadFromStorage();
     Dispatcher.register(this.handleAction.bind(this));
+  }
+
+  private loadFromStorage(): void {
+    try {
+      const savedSessionId = localStorage.getItem(STORAGE_KEY_SESSION_ID);
+      if (savedSessionId) {
+        this.sessionId = savedSessionId;
+      }
+
+      const savedRoleConfig = localStorage.getItem(STORAGE_KEY_ROLE_CONFIG);
+      if (savedRoleConfig) {
+        this.roleConfig = JSON.parse(savedRoleConfig);
+      }
+    } catch (error) {
+      console.error('Failed to load from storage:', error);
+    }
+  }
+
+  private saveToStorage(): void {
+    try {
+      if (this.sessionId) {
+        localStorage.setItem(STORAGE_KEY_SESSION_ID, this.sessionId);
+      } else {
+        localStorage.removeItem(STORAGE_KEY_SESSION_ID);
+      }
+
+      localStorage.setItem(STORAGE_KEY_ROLE_CONFIG, JSON.stringify(this.roleConfig));
+    } catch (error) {
+      console.error('Failed to save to storage:', error);
+    }
   }
 
   scheduleEmit(): void {
@@ -114,6 +149,7 @@ class ChatStore extends EventEmitter implements ChatStoreInterface {
 
       case ChatActionTypes.SET_SESSION_ID:
         this.sessionId = action.sessionId;
+        this.saveToStorage();
         this.immediateEmit();
         break;
 
@@ -124,6 +160,7 @@ class ChatStore extends EventEmitter implements ChatStoreInterface {
 
       case ChatActionTypes.SET_ROLE_CONFIG:
         this.roleConfig = action.roleConfig;
+        this.saveToStorage();
         this.immediateEmit();
         break;
 

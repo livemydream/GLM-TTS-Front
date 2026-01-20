@@ -136,7 +136,6 @@ const RoleSelector: React.FC<RoleSelectorProps> = ({
                 {PRESET_ROLES.map(role => (
                   <Card
                     key={role.id}
-                    hoverable
                     className={`role-card ${selectedPresetId === role.id ? 'selected' : ''}`}
                     onClick={() => setSelectedPresetId(role.id)}
                     size="small"

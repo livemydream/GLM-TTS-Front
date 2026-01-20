@@ -26,11 +26,14 @@
 }
 
 .chat-icon {
-  font-size: 32px;
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  border-radius: 50%;
 }
 
 .chat-header h3 {
@@ -420,7 +423,33 @@
 /* Responsive Design */
 @media (max-width: 768px) {
   .chat-header {
-    padding: 12px 16px;
+    padding: 10px 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .chat-header-info {
+    flex: 1;
+    min-width: 0;
+    gap: 8px;
+  }
+
+  .chat-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .chat-header h3 {
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .chat-header-controls {
+    display: none;
   }
 
   .chat-messages {
@@ -433,13 +462,5 @@
 
   .message-content-wrapper {
     max-width: 85%;
-  }
-
-  .chat-icon {
-    font-size: 24px;
-  }
-
-  .chat-header h3 {
-    font-size: 16px;
   }
 }

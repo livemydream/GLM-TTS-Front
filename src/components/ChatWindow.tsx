@@ -6,6 +6,7 @@ import ChatActions from '@/flux/ChatActions';
 import ChatActionCreators from '@/flux/ChatActionCreators';
 import MarkdownRenderer from './MarkdownRenderer';
 import RoleSelector from './RoleSelector';
+import { getRoleIcon } from '@/utils/roleUtils';
 import type { Message, RoleConfig } from '@/types';
 import './ChatWindow.css';
 
@@ -16,21 +17,28 @@ interface MessageItemProps {
   msg: Message;
   onDelete: (messageId: number) => void;
   formatTime: (timestamp?: string) => string;
+  roleConfig: RoleConfig;
 }
 
 // 消息项组件
 const MessageItem = React.memo<MessageItemProps>(
-  ({ msg, onDelete, formatTime }) => {
+  ({ msg, onDelete, formatTime, roleConfig }) => {
     const isAssistant = msg.role === 'assistant';
 
     // console.log('[MessageItem render] id:', msg.id, 'content:', msg.content.substring(0, 20) + '...', 'isStreaming:', msg.isStreaming);
+
+    // 根据角色配置获取 AI 头像
+    const getAssistantAvatar = () => {
+      const roleIcon = getRoleIcon(roleConfig);
+      return <span style={{ fontSize: '24px' }}>{roleIcon}</span>;
+    };
 
     return (
       <div className={`message ${isAssistant ? 'message-assistant' : 'message-user'}`}>
         <div className="message-content-wrapper">
           <Avatar
             size={40}
-            icon={isAssistant ? <RobotOutlined /> : <UserOutlined />}
+            icon={isAssistant ? getAssistantAvatar() : <UserOutlined />}
             className={isAssistant ? 'avatar-assistant' : 'avatar-user'}
           />
 
@@ -73,20 +81,8 @@ const MessageItem = React.memo<MessageItemProps>(
 
 MessageItem.displayName = 'MessageItem';
 
-// SessionId 管理
-const SESSION_STORAGE_KEY = 'glm_chat_session_id';
-
 const generateSessionId = (): string => {
   return 'session_' + Date.now() + '_' + Math.random().toString(36).substring(2, 15);
-};
-
-const getOrCreateSessionId = (): string => {
-  let sessionId = localStorage.getItem(SESSION_STORAGE_KEY);
-  if (!sessionId) {
-    sessionId = generateSessionId();
-    localStorage.setItem(SESSION_STORAGE_KEY, sessionId);
-  }
-  return sessionId;
 };
 
 const ChatWindow: React.FC = () => {
@@ -96,7 +92,7 @@ const ChatWindow: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [useStream, setUseStream] = useState(true);
-  const [roleConfig, setRoleConfig] = useState<RoleConfig>({ mode: 'none' });
+  const [roleConfig, setRoleConfig] = useState<RoleConfig>(ChatStore.getRoleConfig());
   const [showRoleSelector, setShowRoleSelector] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatMessagesRef = useRef<HTMLDivElement>(null);
@@ -104,12 +100,18 @@ const ChatWindow: React.FC = () => {
 
   // 初始化 SessionId 并加载历史记录
   useEffect(() => {
-    const id = getOrCreateSessionId();
-    setSessionId(id);
-    ChatActions.setSessionId(id);
-
-    // 加载历史记录
-    ChatActionCreators.loadHistory(id)();
+    const storedSessionId = ChatStore.getSessionId();
+    if (storedSessionId) {
+      // 从 store 恢复的 sessionId
+      setSessionId(storedSessionId);
+      // 加载历史记录
+      ChatActionCreators.loadHistory(storedSessionId)();
+    } else {
+      // 生成新的 sessionId
+      const newSessionId = generateSessionId();
+      setSessionId(newSessionId);
+      ChatActions.setSessionId(newSessionId);
+    }
   }, []);
 
   // Load chat state from store
@@ -126,6 +128,7 @@ const ChatWindow: React.FC = () => {
       setIsTyping(ChatStore.getTyping());
       setError(ChatStore.getError());
       setRoleConfig(ChatStore.getRoleConfig());
+      setSessionId(ChatStore.getSessionId());
     };
 
     loadState();
@@ -207,7 +210,6 @@ const ChatWindow: React.FC = () => {
 
     // 生成新的 SessionId
     const newSessionId = generateSessionId();
-    localStorage.setItem(SESSION_STORAGE_KEY, newSessionId);
     setSessionId(newSessionId);
     ChatActions.setSessionId(newSessionId);
 
@@ -229,12 +231,16 @@ const ChatWindow: React.FC = () => {
     // 如果选择了角色，调用 /api/glm/character 接口设置角色
     if (config.mode !== 'none') {
       try {
+        const characterId = config.mode === 'preset'
+          ? config.presetRole?.id
+          : 'custom';
+
         const characterDescription = config.mode === 'preset'
           ? config.presetRole?.systemPrompt
           : config.customPrompt;
 
-        if (characterDescription && sessionId) {
-          await ChatActionCreators.setCharacter(sessionId, characterDescription)();
+        if (characterDescription && sessionId && characterId) {
+          await ChatActionCreators.setCharacter(sessionId, characterId, characterDescription)();
 
           // 接口调用成功后，更新状态并清除本地消息历史
           ChatActions.setRoleConfig(config);
@@ -266,7 +272,7 @@ const ChatWindow: React.FC = () => {
       {/* Header */}
       <div className="chat-header">
         <div className="chat-header-info">
-          <RobotOutlined className="chat-icon" />
+          <span className="chat-icon">{getRoleIcon(roleConfig)}</span>
           <div>
             <h3>
               AI 智能助手
@@ -366,6 +372,7 @@ const ChatWindow: React.FC = () => {
               msg={msg}
               onDelete={handleDeleteMessage}
               formatTime={formatTime}
+              roleConfig={roleConfig}
             />
           ))
         )}
@@ -374,7 +381,7 @@ const ChatWindow: React.FC = () => {
             <div className="message-content-wrapper">
               <Avatar
                 size={40}
-                icon={<RobotOutlined />}
+                icon={<span style={{ fontSize: '24px' }}>{getRoleIcon(roleConfig)}</span>}
                 className="avatar-assistant"
               />
               <div className="message-bubble message-bubble-typing">
